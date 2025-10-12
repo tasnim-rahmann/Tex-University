@@ -1,10 +1,11 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import { StudentServices } from "./student.service";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status';
+import catchAsync from "../../utils/catchAsync";
 
-const getAllStudents = async (req: Request, res: Response, next: NextFunction) => {
-    try {
+const getAllStudents = catchAsync(
+    async (req, res,) => {
         const result = await StudentServices.getAllStudentFromDB();
 
         sendResponse(res, {
@@ -13,14 +14,11 @@ const getAllStudents = async (req: Request, res: Response, next: NextFunction) =
             message: 'Student retrive succesfully',
             data: result,
         });
-    } catch (error) {
-        console.log(error);
-        next(error);
     }
-};
+);
 
-const getSingleStudent = async (req: Request, res: Response, next: NextFunction) => {
-    try {
+const getSingleStudent: RequestHandler = catchAsync(
+    async (req, res) => {
         const { studentId } = req.params;
         const result = await StudentServices.getSingleStudentFromDB(studentId);
 
@@ -30,14 +28,11 @@ const getSingleStudent = async (req: Request, res: Response, next: NextFunction)
             message: 'Get single student succesfully',
             data: result,
         });
-    } catch (error) {
-        console.log(error);
-        next(error);
     }
-};
+);
 
-const deleteStudent = async (req: Request, res: Response, next: NextFunction) => {
-    try {
+const deleteStudent: RequestHandler = catchAsync(
+    async (req, res) => {
         const { studentId } = req.params;
         const result = await StudentServices.deleteStudentFromDB(studentId);
 
@@ -47,11 +42,8 @@ const deleteStudent = async (req: Request, res: Response, next: NextFunction) =>
             message: 'Student deleted succesfully',
             data: result,
         });
-    } catch (error) {
-        console.log(error);
-        next(error);
     }
-};
+);
 
 export const StudentControllers = {
     getAllStudents,
