@@ -9,3 +9,7 @@ export type TAcademicSemester = {
     startMonth: TMonths,
     endMonth: TMonths,
 };
+
+export type TAcademicSemesterNameCodeMapper = {
+    [kye: string]: string;
+};
