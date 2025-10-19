@@ -9,16 +9,16 @@ router.get(
     StudentControllers.getAllStudents
 );
 router.get(
-    '/:studentId',
+    '/:id',
     StudentControllers.getSingleStudent
 );
 router.patch(
-    '/:studentId',
+    '/:id',
     validateRequest(studentValidations.updateStudentValidationSchema),
     StudentControllers.updateStudent
 );
 router.delete(
-    '/:studentId',
+    '/:id',
     StudentControllers.deleteStudent
 );
 
