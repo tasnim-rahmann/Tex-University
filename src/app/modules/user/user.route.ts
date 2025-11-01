@@ -18,12 +18,14 @@ ruoter.post(
 
 ruoter.post(
     '/create-faculty',
+    auth(USER_ROLE.admin),
     validateRequest(createFacultyValidationSchema),
     UserControllers.createFaculty,
 );
 
 ruoter.post(
     '/create-admin',
+    // auth(USER_ROLE.admin),
     validateRequest(createAdminValidationSchema),
     UserControllers.createAdmin,
 );
