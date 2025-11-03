@@ -14,7 +14,7 @@ import { Faculty } from "../faculty/faculty.model";
 import { Admin } from "../admin/admin.model";
 import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 
-const createStudentIntoDB = async (password: string, payload: TStudent) => {
+const createStudentIntoDB = async (file: any, password: string, payload: TStudent) => {
     const userData: Partial<TUser> = {};
 
     userData.password = password || config.default_password as string;
@@ -31,6 +31,10 @@ const createStudentIntoDB = async (password: string, payload: TStudent) => {
         if (!admissionSemester) throw new Error('Admission semester is not found!');
         userData.id = await generateStudentId(admissionSemester);
 
+        const image_name = `${userData?.id}${payload?.name?.firstName}`;
+        const path = file?.path;
+        const { secure_url } = await sendImageToCloudinary(image_name, path) as { secure_url: string; };
+
         // transaction - 1
         const newUser = await User.create([userData], { session });
         if (!newUser.length) {
@@ -39,9 +43,9 @@ const createStudentIntoDB = async (password: string, payload: TStudent) => {
 
         payload.id = newUser[0].id;
         payload.user = newUser[0]._id;
+        payload.profileImage = secure_url;
 
         // transaction - 2
-        sendImageToCloudinary();
         const newStudent = await Student.create([payload], { session });
         if (!newStudent.length) {
             throw new AppError(httpStatus.BAD_REQUEST, 'Faild to create student!');
