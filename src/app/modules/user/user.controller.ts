@@ -3,6 +3,7 @@ import { UserServices } from "./user.service";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status';
 import catchAsync from "../../utils/catchAsync";
+import AppError from "../../errors/AppError";
 
 const createStudent: RequestHandler = catchAsync(
     async (req, res) => {
@@ -18,31 +19,73 @@ const createStudent: RequestHandler = catchAsync(
     }
 );
 
-const createFaculty = catchAsync(async (req, res) => {
-    const { password, faculty: facultyData } = req.body;
+const createFaculty = catchAsync(
+    async (req, res) => {
+        const { password, faculty: facultyData } = req.body;
 
-    const result = await UserServices.createFacultyIntoDB(password, facultyData);
+        const result = await UserServices.createFacultyIntoDB(password, facultyData);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Faculty is created succesfully',
-        data: result,
-    });
-});
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Faculty is created succesfully',
+            data: result,
+        });
+    }
+);
 
-const createAdmin = catchAsync(async (req, res) => {
-    const { password, admin: adminData } = req.body;
+const createAdmin = catchAsync(
+    async (req, res) => {
+        const { password, admin: adminData } = req.body;
 
-    const result = await UserServices.createAdminIntoDB(password, adminData);
+        const result = await UserServices.createAdminIntoDB(password, adminData);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Admin is created succesfully',
-        data: result,
-    });
-});
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Admin is created succesfully',
+            data: result,
+        });
+    }
+);
+
+const getMe = catchAsync(
+    async (req, res) => {
+        // const token = req.headers.authorization;
+        // if (!token) {
+        //     throw new AppError(httpStatus.NOT_FOUND, 'Token not found!');
+        // }
+        const { userId, role } = req.user;
+        const result = await UserServices.getMe(userId, role);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Profile retrive succesfully!',
+            data: result,
+        });
+    }
+);
+
+const changeStatus = catchAsync(
+    async (req, res) => {
+        const id = req.params.id;
+        const result = await UserServices.changeStatus(id, req.body);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Status changed succesfully!',
+            data: result,
+        });
+    }
+);
 
 
-export const UserControllers = { createStudent, createFaculty, createAdmin };
+export const UserControllers = {
+    createStudent,
+    createFaculty,
+    createAdmin,
+    getMe,
+    changeStatus,
+};
