@@ -12,7 +12,7 @@ import { TFaculty } from "../faculty/faculty.interface";
 import { AcademicDepartment } from "../academicDepartment/academicDepartment.model";
 import { Faculty } from "../faculty/faculty.model";
 import { Admin } from "../admin/admin.model";
-import { verifyToken } from "../auth/auth.utils";
+import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 
 const createStudentIntoDB = async (password: string, payload: TStudent) => {
     const userData: Partial<TUser> = {};
@@ -41,6 +41,7 @@ const createStudentIntoDB = async (password: string, payload: TStudent) => {
         payload.user = newUser[0]._id;
 
         // transaction - 2
+        sendImageToCloudinary();
         const newStudent = await Student.create([payload], { session });
         if (!newStudent.length) {
             throw new AppError(httpStatus.BAD_REQUEST, 'Faild to create student!');
