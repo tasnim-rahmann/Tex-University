@@ -5,6 +5,10 @@ import { TEnrolledCourse } from "./enrolledCourse.interface";
 import EnrolledCourse from "./enrolledCourse.model";
 import { Student } from "../student/student.model";
 import mongoose from "mongoose";
+import { SemesterRegistration } from "../semesterRegistration/semesterRegistration.model";
+import { Course } from "../course/course.model";
+import { Faculty } from "../faculty/faculty.model";
+import { calculateGradePoints } from "./enrolledCourse.utils";
 
 const createEnrolledCourseIntoDB = async (userId: string, payload: TEnrolledCourse) => {
     const { offeredCourse } = payload;
@@ -18,7 +22,7 @@ const createEnrolledCourseIntoDB = async (userId: string, payload: TEnrolledCour
         throw new AppError(httpStatus.BAD_REQUEST, 'Room is full!');
     }
 
-    const student = await Student.findOne({ id: userId }).select('id');
+    const student = await Student.findOne({ id: userId }, { _id: 1 });
     if (!student) {
         throw new AppError(httpStatus.NOT_FOUND, 'Student not found!');
     }
@@ -31,6 +35,44 @@ const createEnrolledCourseIntoDB = async (userId: string, payload: TEnrolledCour
 
     if (isStudentAlreadyEnrolled) {
         throw new AppError(httpStatus.CONFLICT, 'Student is already enrolled!');
+    }
+
+    const course = await Course.findById(isOfferedCourseExists.course);
+    const currentCredit = course?.credits;
+    const semesterRegistration = await SemesterRegistration.findById(isOfferedCourseExists.semesterRegistration).select('maxCredit');
+    const maxCredit = semesterRegistration?.maxCredit;
+    const enrolledCourses = await EnrolledCourse.aggregate([
+        {
+            $match: {
+                semesterRegistration: isOfferedCourseExists.semesterRegistration,
+                student: student._id,
+            }
+        },
+        {
+            $lookup: {
+                from: 'courses',
+                localField: 'course',
+                foreignField: '_id',
+                as: 'enrolledCourseData'
+            }
+        },
+        {
+            $unwind: "$enrolledCourseData"
+        },
+        {
+            $group: { _id: null, totalEnrolledCredits: { $sum: "$enrolledCourseData.credits" } }
+        },
+        {
+            $project: {
+                _id: 0,
+                totalEnrolledCredits: 1,
+            }
+        }
+    ]);
+
+    const totalCredits = enrolledCourses.length > 0 ? enrolledCourses[0].totalEnrolledCredits : 0;
+    if (totalCredits && maxCredit && totalCredits + currentCredit > maxCredit) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'You have exceeded maximum number of credits!');
     }
 
     const session = await mongoose.startSession();
@@ -67,6 +109,81 @@ const createEnrolledCourseIntoDB = async (userId: string, payload: TEnrolledCour
     }
 };
 
+const updateEnrolledCourseMarksIntoDB = async (
+    facultyId: string,
+    payload: Partial<TEnrolledCourse>,
+) => {
+    const { semesterRegistration, offeredCourse, student, courseMarks } = payload;
+
+    const isSemesterRegistrationExists =
+        await SemesterRegistration.findById(semesterRegistration);
+
+    if (!isSemesterRegistrationExists) {
+        throw new AppError(
+            httpStatus.NOT_FOUND,
+            'Semester registration not found !',
+        );
+    }
+
+    const isOfferedCourseExists = await OfferedCourse.findById(offeredCourse);
+
+    if (!isOfferedCourseExists) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Offered course not found !');
+    }
+    const isStudentExists = await Student.findById(student);
+
+    if (!isStudentExists) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Student not found !');
+    }
+
+    const faculty = await Faculty.findOne({ id: facultyId }, { _id: 1 });
+
+    if (!faculty) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Faculty not found !');
+    }
+
+    const isCourseBelongToFaculty = await EnrolledCourse.findOne({
+        semesterRegistration,
+        offeredCourse,
+        student,
+        faculty: faculty._id,
+    });
+
+    if (!isCourseBelongToFaculty) {
+        throw new AppError(httpStatus.FORBIDDEN, 'You are forbidden! !');
+    }
+    console.log(isCourseBelongToFaculty);
+
+    const modifiedData: Record<string, unknown> = { ...courseMarks };
+
+    if (courseMarks?.finalTerm) {
+        const { calssTest1, midTerm, classTest2, finalTerm } = isCourseBelongToFaculty.courseMarks;
+        const totalMarks = Math.ceil(calssTest1 * 0.10) + Math.ceil(midTerm * 0.30) + Math.ceil(classTest2 * 10) + Math.ceil(finalTerm * 0.50);
+        const result = calculateGradePoints(totalMarks);
+
+        modifiedData.grade = result.grade;
+        modifiedData.gradePionts = result.gradePionts;
+        modifiedData.isCompleted = true;
+    }
+
+    if (courseMarks && Object.keys(courseMarks).length) {
+        for (const [key, value] of Object.entries(courseMarks)) {
+            modifiedData[`courseMarks.${key}`] = value;
+        }
+    }
+
+    const result = await EnrolledCourse.findByIdAndUpdate(
+        isCourseBelongToFaculty._id,
+        modifiedData,
+        {
+            new: true,
+        },
+    );
+
+    return result;
+};
+
 export const EnrolledCourseServices = {
     createEnrolledCourseIntoDB,
+    updateEnrolledCourseMarksIntoDB,
 };
