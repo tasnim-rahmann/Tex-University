@@ -14,6 +14,7 @@ const createOfferedCourseValidationSchema = z.object({
         academicFaculty: z.string(),
         course: z.string(),
         faculty: z.string(),
+        academicDepartment: z.string(),
         maxCapacity: z.number(),
         section: z.number(),
         days: z.array(z.enum([...Days] as [string, ...string[]])),

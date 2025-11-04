@@ -18,6 +18,11 @@ const offeredCourseSchema = new Schema<TOfferedCourse>({
         required: true,
         ref: 'AcademicFaculty'
     },
+    academicDepartment: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: 'AcademicDepartment',
+    },
     course: {
         type: Schema.Types.ObjectId,
         required: true,
