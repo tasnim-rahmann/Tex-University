@@ -76,18 +76,12 @@ const createFacultyIntoDB = async (
     password: string,
     payload: TFaculty,
 ) => {
-    // create a user object
     const userData: Partial<TUser> = {};
-
-    //if password is not given , use deafult password
     userData.password = password || (config.default_password as string);
 
-    //set faculty role
     userData.role = 'faculty';
-    //set faculty email
     userData.email = payload.email;
 
-    // find academic department info
     const academicDepartment = await AcademicDepartment.findById(
         payload.academicDepartment,
     );
@@ -102,13 +96,11 @@ const createFacultyIntoDB = async (
 
     try {
         session.startTransaction();
-        //set  generated id
         userData.id = await generateFacultyId();
 
         if (file) {
             const imageName = `${userData.id}${payload?.name?.firstName}`;
             const path = file?.path;
-            //send image to cloudinary
             const { secure_url } = await sendImageToCloudinary(imageName, path) as { secure_url: string; };
             payload.profileImg = secure_url as string;
         }

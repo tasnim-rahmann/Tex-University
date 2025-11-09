@@ -152,17 +152,16 @@ const updateEnrolledCourseMarksIntoDB = async (
     if (!isCourseBelongToFaculty) {
         throw new AppError(httpStatus.FORBIDDEN, 'You are forbidden! !');
     }
-    console.log(isCourseBelongToFaculty);
 
     const modifiedData: Record<string, unknown> = { ...courseMarks };
 
     if (courseMarks?.finalTerm) {
         const { calssTest1, midTerm, classTest2, finalTerm } = isCourseBelongToFaculty.courseMarks;
-        const totalMarks = Math.ceil(calssTest1 * 0.10) + Math.ceil(midTerm * 0.30) + Math.ceil(classTest2 * 10) + Math.ceil(finalTerm * 0.50);
+        const totalMarks = Math.ceil(calssTest1) + Math.ceil(midTerm) + Math.ceil(classTest2) + Math.ceil(finalTerm);
         const result = calculateGradePoints(totalMarks);
 
         modifiedData.grade = result.grade;
-        modifiedData.gradePionts = result.gradePionts;
+        modifiedData.gradePoints = result.gradePoints;
         modifiedData.isCompleted = true;
     }
 
