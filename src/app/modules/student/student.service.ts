@@ -72,12 +72,8 @@ const getAllStudentFromDB = async (query: Record<string, unknown>) => {
     const studentQuery = new QueryBuilder(
         Student.find()
             .populate('admissionSemester')
-            .populate({
-                path: 'academicDepartment',
-                populate: {
-                    path: 'academicFaculty',
-                }
-            }), query)
+            .populate('academicDepartment academicFaculty')
+        , query)
         .search(studentSearchableFields)
         .filter()
         .sort()
